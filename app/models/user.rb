@@ -7,18 +7,16 @@ class User < ActiveRecord::Base
   include Authorization::AasmRoles
   
   # Validations
-  validates_presence_of :login, :if => :not_using_openid?
-  validates_length_of :login, :within => 3..40, :if => :not_using_openid?
-  validates_uniqueness_of :login, :case_sensitive => false, :if => :not_using_openid?
-  validates_format_of :login, :with => RE_LOGIN_OK, :message => MSG_LOGIN_BAD, :if => :not_using_openid?
+  validates_presence_of :login
+  validates_length_of :login, :within => 3..40
+  validates_uniqueness_of :login, :case_sensitive => false
+  validates_format_of :login, :with => RE_LOGIN_OK, :message => MSG_LOGIN_BAD
   validates_format_of :name, :with => RE_NAME_OK, :message => MSG_NAME_BAD, :allow_nil => true
   validates_length_of :name, :maximum => 100
-  validates_presence_of :email, :if => :not_using_openid?
-  validates_length_of :email, :within => 6..100, :if => :not_using_openid?
-  validates_uniqueness_of :email, :case_sensitive => false, :if => :not_using_openid?
-  validates_format_of :email, :with => RE_EMAIL_OK, :message => MSG_EMAIL_BAD, :if => :not_using_openid?
-  validates_uniqueness_of :identity_url, :unless => :not_using_openid?
-  validate :normalize_identity_url
+  validates_presence_of :email
+  validates_length_of :email, :within => 6..100
+  validates_uniqueness_of :email, :case_sensitive => false
+  validates_format_of :email, :with => RE_EMAIL_OK, :message => MSG_EMAIL_BAD
   
   # Relations
   has_and_belongs_to_many :roles
@@ -45,19 +43,11 @@ class User < ActiveRecord::Base
     u && u.authenticated?(password) ? u : nil
   end
 
-  def not_using_openid?
-    identity_url.blank?
-  end
-  
+
   def password_required?
-    new_record? ? not_using_openid? && (crypted_password.blank? || !password.blank?) : !password.blank?
+    new_record? ? (crypted_password.blank? || !password.blank?) : !password.blank?
   end
 
-  def normalize_identity_url
-    self.identity_url = OpenIdAuthentication.normalize_url(identity_url) unless not_using_openid?
-  rescue
-    errors.add_to_base("Invalid OpenID URL")
-  end
   
   # Creates a new password for the user, and notifies him with an email
   def reset_password!
